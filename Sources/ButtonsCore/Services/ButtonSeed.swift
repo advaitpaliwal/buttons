@@ -19,7 +19,9 @@ public enum ButtonSeed {
                     title: "Workflow",
                     kind: .askAI,
                     value: """
-                    Star https://github.com/companion-inc/buttons and open it in the browser.
+                    Star the GitHub repository explicitly named in this saved prompt and open it in the browser.
+
+                    If this saved prompt does not specify a repository, report BUTTONS_RUN_FAILED: Edit this prompt to name the repository you want to star. Do not choose a repository or infer one from the current workspace, git remotes, or signed-in account.
 
                     Use the available local tools and CLI as needed. Do not use Computer Use for this button. Opening the repository alone is not completion; report failure when the star action is blocked.
                     """,

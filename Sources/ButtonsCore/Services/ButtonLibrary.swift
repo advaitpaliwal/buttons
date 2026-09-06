@@ -131,10 +131,6 @@ public final class ButtonLibrary {
             return ButtonSeed.starRepo
         }
 
-        if copy.title == "Star Repo" {
-            copy = ButtonSeed.starRepo
-        }
-
         if copy.title == "Ask AI", copy.subtitle == "ChatGPT or Claude" {
             copy.title = "Run Agent"
             copy.subtitle = "Workspace task"
@@ -200,10 +196,11 @@ public final class ButtonLibrary {
             !legacySeedTitles.contains(button.title)
         }
 
-        copy.removeAll { button in
-            button.id == ButtonSeed.starRepo.id || button.title == ButtonSeed.starRepo.title
-        }
-        copy.insert(ButtonSeed.starRepo, at: 0)
+        // Keep the user's saved prompt (including its repository choice).
+        // Only collapse duplicate instances of the stable starter identity.
+        let starter = copy.first { $0.id == ButtonSeed.starRepo.id } ?? ButtonSeed.starRepo
+        copy.removeAll { $0.id == ButtonSeed.starRepo.id }
+        copy.insert(starter, at: 0)
 
         return uniquedSlugs(copy.map(normalizedSlug))
     }

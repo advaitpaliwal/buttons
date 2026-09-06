@@ -21,7 +21,7 @@ struct ButtonTemplateTests {
         let data = """
         {
           "inputs": [
-            { "key": "repo", "label": "Repo", "defaultValue": "companion-inc/buttons" }
+            { "key": "repo", "label": "Repo", "defaultValue": "example/project" }
           ],
           "steps": [
             {
@@ -36,6 +36,6 @@ struct ButtonTemplateTests {
 
         let workflow = try JSONDecoder().decode(ButtonWorkflow.self, from: data)
 
-        #expect(workflow.steps.first?.value == "Star companion-inc/buttons")
+        #expect(workflow.steps.first?.value == "Star example/project")
     }
 }

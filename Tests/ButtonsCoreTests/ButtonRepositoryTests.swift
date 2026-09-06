@@ -34,8 +34,8 @@ struct ButtonRepositoryTests {
         #expect(loaded.count == 1)
     }
 
-    @Test("Only seed button stars the internal repository")
-    func onlySeedButtonStarsInternalRepository() {
+    @Test("Seed requires a user-supplied repository instead of promoting a development repo")
+    func seedRequiresUserSuppliedRepository() {
         let button = ButtonSeed.defaults[0]
 
         #expect(ButtonSeed.defaults.count == 1)
@@ -48,7 +48,13 @@ struct ButtonRepositoryTests {
         #expect(button.workflow.steps.first?.aiConfiguration?.provider == .codex)
         #expect(button.workflow.steps.first?.aiConfiguration?.executionMode == .dangerouslyRun)
         #expect(button.workflow.steps.first?.aiConfiguration?.thinkingLevel == .low)
-        #expect(button.workflow.steps.first?.value.contains("https://github.com/companion-inc/buttons") == true)
+        let prompt = button.workflow.steps.first?.value ?? ""
+        #expect(prompt.contains("Edit this prompt to name the repository you want to star"))
+        #expect(prompt.contains("BUTTONS_RUN_FAILED:"))
+        #expect(prompt.contains("Do not choose a repository or infer one"))
+        #expect(!prompt.contains("https://"))
+        #expect(!prompt.contains("companion-inc"))
+        #expect(!prompt.contains("advaitpaliwal"))
         #expect(button.workflow.steps.first?.value.contains("gh api") == false)
         #expect(button.workflow.steps.first?.value.contains("gh repo view") == false)
     }
@@ -98,6 +104,28 @@ struct ButtonRepositoryTests {
         #expect(loadedCustomButton?.title == "Custom")
     }
 
+    @Test("Library preserves the user-supplied starter prompt across reloads")
+    func libraryPreservesUserSuppliedStarterPrompt() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = FileButtonRepository(fileURL: rootURL.appending(path: "buttons.json"))
+        let receiptRepository = ButtonRunReceiptRepository(fileURL: rootURL.appending(path: "runs.json"))
+        var edited = ButtonSeed.starRepo
+        edited.workflow.steps[0].value = "Star example/project and open it."
+        try await repository.save([edited])
+
+        let library = await ButtonLibrary(repository: repository, receiptRepository: receiptRepository)
+        await library.load()
+        await library.load()
+
+        let loaded = await library.buttons
+        #expect(loaded.filter { $0.id == edited.id }.count == 1)
+        #expect(loaded.first { $0.id == edited.id }?.workflow.steps.first?.value == "Star example/project and open it.")
+        let persisted = try await repository.load()
+        #expect(persisted.first { $0.id == edited.id }?.workflow.steps.first?.value == "Star example/project and open it.")
+    }
+
     @Test("Production button workspace lives in the home dot-buttons directory")
     func productionWorkspaceLivesInHomeDotButtons() {
         let workspace = ButtonAutomationWorkspace.production()
@@ -106,5 +134,25 @@ struct ButtonRepositoryTests {
             .appending(path: "buttons", directoryHint: .isDirectory)
 
         #expect(workspace.rootURL.path == expectedRoot.path)
+    }
+
+    @Test("A user button sharing the starter title is not discarded")
+    func sameTitleDoesNotDiscardUserButton() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = FileButtonRepository(fileURL: rootURL.appending(path: "buttons.json"))
+        let receiptRepository = ButtonRunReceiptRepository(fileURL: rootURL.appending(path: "runs.json"))
+        let imported = try ButtonTemplateCodec.decode(ButtonTemplateCodec.encode(ButtonSeed.starRepo))
+        var edited = imported
+        edited.workflow.steps[0].value = "Star example/another-project."
+        try await repository.save([edited])
+
+        let library = await ButtonLibrary(repository: repository, receiptRepository: receiptRepository)
+        await library.load()
+
+        let loaded = await library.buttons
+        #expect(loaded.first { $0.id == edited.id }?.workflow.steps.first?.value == "Star example/another-project.")
+        #expect(loaded.contains { $0.id == ButtonSeed.starRepo.id })
     }
 }

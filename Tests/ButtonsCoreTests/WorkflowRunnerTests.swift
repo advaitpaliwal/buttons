@@ -76,13 +76,13 @@ struct WorkflowRunnerTests {
     @Test("Agent done marker is stripped from user output")
     func agentDoneMarkerIsStrippedFromUserOutput() {
         let completion = WorkflowRunner.interpretedAgentCompletion("""
-        BUTTONS_RUN_DONE: Starred companion-inc/buttons.
+        BUTTONS_RUN_DONE: Starred example/project.
         Opened the repository.
         """)
 
         #expect(!completion.isFailed)
         #expect(completion.output == """
-        Starred companion-inc/buttons.
+        Starred example/project.
         Opened the repository.
         """)
     }

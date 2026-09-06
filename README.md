@@ -47,6 +47,11 @@ GitHub Actions builds the same DMG on every push to `main` and exposes it as the
 
 Dangerous agent buttons require approval by default.
 
+The “Star Repo” starter has no repository preselected. Edit its saved prompt to
+name the repository you want; without one, the prompt instructs the agent to
+report failure rather than infer a target from your workspace or account.
+Existing saved prompts are preserved, not rewritten to promote this repository.
+
 ## Local agents
 
 Authenticate the local CLIs before running agent buttons:
